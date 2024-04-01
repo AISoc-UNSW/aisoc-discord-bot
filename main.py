@@ -458,7 +458,6 @@ async def on_message(message):
     # Ignore bot messages
     if message.author.bot:
         return
-
     # Process commands first
     await client.process_commands(message)
 
