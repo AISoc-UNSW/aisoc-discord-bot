@@ -1,0 +1,6 @@
+.env
+.vscode
+__pycache__
+count.json
+log.txt
+database.db
