@@ -6,7 +6,6 @@ This repository contains a Discord bot written in Python that utilizes OpenAI's 
 
 <img src="assets/readme.gif" width="100%">
 
-### Multiple language support:
 
 <img src="assets/readme2.gif" width="100%">
 
