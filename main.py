@@ -444,11 +444,11 @@ async def gpt(interaction, prompt):
         user_member = user[2]
         user_count = user[3]
         if (user_member < 0) or user_count < DAILY_USES:
-            usage, response = askGPT(prompt)
             cur.execute(
                 "UPDATE Users SET NumUses = ? WHERE ID = ?", (user_count + 1, user_id)
             )
             conn.commit()
+            usage, response = askGPT(prompt)
             try:
                 embed = nextcord.Embed(description="**Your prompt:**")
                 embed.set_footer(text=prompt)
