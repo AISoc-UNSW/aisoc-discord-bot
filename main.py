@@ -22,7 +22,6 @@ logging.basicConfig(
 
 load_dotenv()
 
-CHANNEL_ID = int(os.environ["CHANNEL_ID"])
 DAILY_USES = 3
 GPT_MODEL = "gpt-4"
 # GPT_MODEL = "gpt-3.5-turbo-0125"
@@ -96,14 +95,6 @@ async def timeout(member: nextcord.Member, seconds: int, reason="No reason provi
     except Exception as e:
         logging.error(f"Failed to timeout {member}: {e}")
 
-
-def in_channel(channel_id):
-    async def predicate(ctx):
-        return ctx.channel.id == channel_id
-
-    return commands.check(predicate)
-
-
 async def daily_reset():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
@@ -127,6 +118,34 @@ async def schedule_reset():
             await asyncio.sleep(seconds_until_target)
         await daily_reset
 
+# Constants for rate limiting
+MAX_COMMANDS = 5  # Max number of commands a user can issue within the time period
+TIME_PERIOD = timedelta(seconds=20)  # Time period for rate limit in seconds
+
+# Dictionary to track command usage: {user_id: [timestamps]}
+command_usage_tracker = {}
+
+# Function to check if a user is spamming commands
+async def check_command_spam(interaction: nextcord.Interaction) -> bool:
+    user_id = interaction.user.id
+    current_time = datetime.now()
+
+    if user_id not in command_usage_tracker:
+        command_usage_tracker[user_id] = [current_time]
+        return False
+
+    # Filter out commands outside of the time period
+    command_usage_tracker[user_id] = [timestamp for timestamp in command_usage_tracker[user_id] if current_time - timestamp <= TIME_PERIOD]
+
+    # Check if current command exceeds rate limit
+    if len(command_usage_tracker[user_id]) >= MAX_COMMANDS:
+        # Timeout for 60 seconds
+        await timeout(interaction.user, 60, "Spamming commands")
+        return True
+
+    # Record current command usage
+    command_usage_tracker[user_id].append(current_time)
+    return False
 
 # --------------------------UI Buttons----------------------------
 class ButtonView(ui.View):
@@ -309,6 +328,9 @@ class CommandSelect(Select):
 async def help(interaction):
     """Displays all commands."""
     await interaction.response.defer()
+    if await check_command_spam(interaction):
+        logging.info(f"Timed out {interaction.user} for spamming commands.")
+        return
     embed = nextcord.Embed(
         title="🤖 Bot Commands Guide 🤖", color=nextcord.Color.blue()
     )
@@ -337,6 +359,9 @@ async def help(interaction):
 async def hello(interaction):
     """Greets the user."""
     await interaction.response.defer()
+    if await check_command_spam(interaction):
+        logging.info(f"Timed out {interaction.user} for spamming commands.")
+        return
     await _say(interaction, "Hello!")
     logging.info(f"Executed hello command by {interaction.user}: Hello!")
 
@@ -345,6 +370,10 @@ async def hello(interaction):
 async def fact(interaction):
     """Gives a random cool fact!"""
     await interaction.response.defer()
+    if await check_command_spam(interaction):
+        logging.info(f"Timed out {interaction.user} for spamming commands.")
+        return
+
     view = BeemButtonView()
     await _say(interaction, "Fact APIs are too expensive!", view=view)
     logging.info(f"Executed fact command by {interaction.user}")
@@ -354,6 +383,9 @@ async def fact(interaction):
 async def prompts_left(interaction):
     """Shows how many prompts you have left for the day."""
     await interaction.response.defer()
+    if await check_command_spam(interaction):
+        logging.info(f"Timed out {interaction.user} for spamming commands.")
+        return
     try:
         user_id = interaction.user.id
         conn = sqlite3.connect("database.db")
@@ -395,6 +427,9 @@ async def gpt(interaction, prompt):
     """Sends the user's prompt to the AI for a response. Usage is limited to 3 per day."""
     # TODO: Implement a cooldown?
     await interaction.response.defer()
+    if await check_command_spam(interaction):
+        logging.info(f"Timed out {interaction.user} for spamming commands.")
+        return
     try:
         author = interaction.user
         user_id = author.id
