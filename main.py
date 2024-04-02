@@ -141,6 +141,7 @@ async def check_command_spam(interaction: nextcord.Interaction) -> bool:
     if len(command_usage_tracker[user_id]) >= MAX_COMMANDS:
         # Timeout for 60 seconds
         await timeout(interaction.user, 60, "Spamming commands")
+        logging.info(f"Timed out {interaction.user} for spamming commands.")
         return True
 
     # Record current command usage
@@ -329,7 +330,6 @@ async def help(interaction):
     """Displays all commands."""
     await interaction.response.defer()
     if await check_command_spam(interaction):
-        logging.info(f"Timed out {interaction.user} for spamming commands.")
         return
     embed = nextcord.Embed(
         title="🤖 Bot Commands Guide 🤖", color=nextcord.Color.blue()
@@ -360,7 +360,6 @@ async def hello(interaction):
     """Greets the user."""
     await interaction.response.defer()
     if await check_command_spam(interaction):
-        logging.info(f"Timed out {interaction.user} for spamming commands.")
         return
     await _say(interaction, "Hello!")
     logging.info(f"Executed hello command by {interaction.user}: Hello!")
@@ -371,7 +370,6 @@ async def fact(interaction):
     """Gives a random cool fact!"""
     await interaction.response.defer()
     if await check_command_spam(interaction):
-        logging.info(f"Timed out {interaction.user} for spamming commands.")
         return
 
     view = BeemButtonView()
@@ -384,7 +382,6 @@ async def prompts_left(interaction):
     """Shows how many prompts you have left for the day."""
     await interaction.response.defer()
     if await check_command_spam(interaction):
-        logging.info(f"Timed out {interaction.user} for spamming commands.")
         return
     try:
         user_id = interaction.user.id
@@ -428,7 +425,6 @@ async def gpt(interaction, prompt):
     # TODO: Implement a cooldown?
     await interaction.response.defer()
     if await check_command_spam(interaction):
-        logging.info(f"Timed out {interaction.user} for spamming commands.")
         return
     try:
         author = interaction.user
