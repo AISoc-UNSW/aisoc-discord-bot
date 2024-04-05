@@ -26,7 +26,7 @@ DAILY_USES = 3
 GPT_MODEL = "gpt-4"
 # GPT_MODEL = "gpt-3.5-turbo-0125"
 TOKEN = os.environ["DISCORD_TOKEN"]
-
+CHANNEL_ID = int(os.environ["CHANNEL_ID"])
 OpenAI.api_key = os.environ["OPENAI_API_KEY"]
 
 initial_prompt = ""
@@ -100,6 +100,8 @@ async def daily_reset():
     cur = conn.cursor()
     cur.execute("UPDATE Users SET NumUses = ?", (0,))
     conn.commit()
+    channel= client.get_channel(CHANNEL_ID)
+    await channel.send("Prompts has reseted")
 
 
 async def schedule_reset():
@@ -116,7 +118,8 @@ async def schedule_reset():
         else:
             seconds_until_target = (target_time - now).total_seconds()
             await asyncio.sleep(seconds_until_target)
-        await daily_reset()
+        await daily_reset
+
 
 # Constants for rate limiting
 MAX_COMMANDS = 5  # Max number of commands a user can issue within the time period
