@@ -116,7 +116,7 @@ async def schedule_reset():
         else:
             seconds_until_target = (target_time - now).total_seconds()
             await asyncio.sleep(seconds_until_target)
-        await daily_reset
+        await daily_reset()
 
 # Constants for rate limiting
 MAX_COMMANDS = 5  # Max number of commands a user can issue within the time period
